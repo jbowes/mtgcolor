@@ -440,24 +440,6 @@ impl ColorSet {
             .map(|set| (set, 1))
             .ok_or(DecodeError::InvalidEncoding)
     }
-
-    /// The one-byte binary form.
-    #[must_use]
-    pub const fn to_byte(self) -> u8 {
-        self.0
-    }
-
-    /// Reads the one-byte binary form.
-    ///
-    /// # Errors
-    ///
-    /// [`DecodeError::InvalidEncoding`] if any of the top three bits are set.
-    pub const fn from_byte(byte: u8) -> Result<Self, DecodeError> {
-        match Self::from_bits(byte) {
-            Some(set) => Ok(set),
-            None => Err(DecodeError::InvalidEncoding),
-        }
-    }
 }
 
 impl fmt::Debug for ColorSet {

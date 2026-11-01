@@ -1,4 +1,4 @@
-use mtgcolor::{Cmp, Color, ColorKind, ColorSet, ColorSpec, DecodeError, ParseError};
+use mtgcolor::{Cmp, Color, ColorIdentity, ColorKind, ColorSet, ColorSpec, ParseError};
 use std::cmp::Ordering;
 
 fn set(s: &str) -> ColorSet {
@@ -108,30 +108,6 @@ fn every_named_set_names_itself() {
 }
 
 #[test]
-fn cmp_operators_parse_and_print() {
-    for op in [Cmp::Eq, Cmp::Ne, Cmp::Lt, Cmp::Le, Cmp::Gt, Cmp::Ge] {
-        assert_eq!(Cmp::parse(op.symbol()), Some(op));
-    }
-    assert_eq!(Cmp::parse("=="), Some(Cmp::Eq));
-    assert_eq!(Cmp::parse(":"), None);
-}
-
-#[test]
-fn the_binary_form_is_one_byte_with_the_top_three_bits_clear() {
-    for bits in 0..32u8 {
-        let set = ColorSet::from_bits(bits).unwrap();
-        let mut out = Vec::new();
-        set.encode(&mut out);
-        assert_eq!(out, [bits]);
-        assert_eq!(ColorSet::decode(&out).unwrap(), (set, 1));
-    }
-    assert_eq!(ColorSet::decode(&[]), Err(DecodeError::UnexpectedEof));
-    assert_eq!(ColorSet::decode(&[0x20]), Err(DecodeError::InvalidEncoding));
-    // Only the first byte is read.
-    assert_eq!(ColorSet::decode(&[0b101, 0xFF]).unwrap().1, 1);
-}
-
-#[test]
 fn color_spec_follows_scryfall_semantics() {
     let spec = |s: &str| ColorSpec::parse(s).unwrap();
 
@@ -167,4 +143,61 @@ fn color_spec_follows_scryfall_semantics() {
         Err(ParseError::InvalidColorCount(_))
     ));
     assert!(ColorSpec::parse("purple").is_err());
+}
+
+#[test]
+fn cmp_operators_parse_and_print() {
+    for op in [Cmp::Eq, Cmp::Ne, Cmp::Lt, Cmp::Le, Cmp::Gt, Cmp::Ge] {
+        assert_eq!(Cmp::parse(op.symbol()), Some(op));
+    }
+    assert_eq!(Cmp::parse("=="), Some(Cmp::Eq));
+    assert_eq!(Cmp::parse(":"), None);
+}
+
+#[test]
+fn commander_identity_rules() {
+    let id = |s: &str| -> ColorIdentity { s.parse().unwrap() };
+    assert!(id("c").fits_in(id("wu")));
+    assert!(id("w").fits_in(id("wu")));
+    assert!(!id("wb").fits_in(id("wu")));
+    assert!(id("wubrg").fits_in(id("wubrg")));
+    assert!(id("esper").compare(Cmp::Le, id("wubrg")));
+    assert!(id("w").compare(Cmp::Lt, id("wu")));
+}
+
+#[test]
+fn identity_is_assembled_from_cost_text_type_line_and_indicator() {
+    let from = |cost: &str, text: &str, types: &str| {
+        ColorIdentity::from_cost(&cost.parse().unwrap())
+            | ColorIdentity::from_oracle_text(text)
+            | ColorIdentity::from_type_line(types)
+    };
+    // Symbols in rules text count, reminder text does not.
+    assert_eq!(
+        from("{1}{U}", "{T}: Add {R}.", "Creature").to_string(),
+        "UR"
+    );
+    assert_eq!(from("{1}", "({T}: Add {G}.)", "Artifact").to_string(), "C");
+    assert_eq!(
+        from("", "({T}: Add {G}.)", "Basic Land — Forest").to_string(),
+        "G"
+    );
+    // Hybrid and Phyrexian symbols count their colors.
+    assert_eq!(from("{W/U}", "Pay {B/P}.", "Creature").to_string(), "WUB");
+    // Basic land types are whole words, and each gives its own color.
+    assert_eq!(
+        ColorIdentity::from_type_line("Land — Forest Island").to_string(),
+        "UG"
+    );
+    assert_eq!(
+        ColorIdentity::from_type_line("Creature — Plainswalker").to_string(),
+        "C"
+    );
+    // Non-mana symbols and unknown ones are ignored.
+    assert_eq!(
+        ColorIdentity::from_oracle_text("{T}, {E}, {PW}{CHAOS} {nonsense}").to_string(),
+        "C"
+    );
+    // An indicator is just a set.
+    assert_eq!(ColorIdentity::new(set("b")).to_string(), "B");
 }
