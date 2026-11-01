@@ -11,6 +11,8 @@ pub enum ParseError {
     Empty,
     /// A color letter, color name or nickname that is not recognised.
     UnknownColor(String),
+    /// A color count outside `0..=5`.
+    InvalidColorCount(String),
 }
 
 impl fmt::Display for ParseError {
@@ -18,6 +20,7 @@ impl fmt::Display for ParseError {
         match self {
             Self::Empty => f.write_str("empty input"),
             Self::UnknownColor(s) => write!(f, "unknown color: {s:?}"),
+            Self::InvalidColorCount(s) => write!(f, "invalid color count: {s:?}"),
         }
     }
 }

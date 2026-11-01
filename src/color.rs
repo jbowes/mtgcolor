@@ -392,7 +392,7 @@ impl ColorSet {
     /// nicknames (`azorius`, `quandrix`, `bant`, `abzan`, `chaos`). `c` and `colorless` give
     /// the empty set.
     ///
-    /// The `m`/`multicolor` and numeric forms are not sets, so they are rejected.
+    /// The `m`/`multicolor` and numeric forms are not sets; see [`ColorSpec`](crate::ColorSpec).
     ///
     /// # Errors
     ///

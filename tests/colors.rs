@@ -1,4 +1,4 @@
-use mtgcolor::{Cmp, Color, ColorSet, DecodeError, ParseError};
+use mtgcolor::{Cmp, Color, ColorKind, ColorSet, ColorSpec, DecodeError, ParseError};
 use std::cmp::Ordering;
 
 fn set(s: &str) -> ColorSet {
@@ -129,4 +129,42 @@ fn the_binary_form_is_one_byte_with_the_top_three_bits_clear() {
     assert_eq!(ColorSet::decode(&[0x20]), Err(DecodeError::InvalidEncoding));
     // Only the first byte is read.
     assert_eq!(ColorSet::decode(&[0b101, 0xFF]).unwrap().1, 1);
+}
+
+#[test]
+fn color_spec_follows_scryfall_semantics() {
+    let spec = |s: &str| ColorSpec::parse(s).unwrap();
+
+    // `c:rg` is "at least red and green"; `id:rg` is "fits in red-green".
+    assert!(spec("rg").matches_colon(ColorKind::Color, set("rgw")));
+    assert!(!spec("rg").matches_colon(ColorKind::Color, set("r")));
+    assert!(spec("rg").matches_colon(ColorKind::Identity, set("r")));
+    assert!(!spec("rg").matches_colon(ColorKind::Identity, set("rgw")));
+    // `id<=esper t:instant`, `c>=uw -c:red`
+    assert!(spec("esper").matches(Cmp::Le, set("wb")));
+    assert!(spec("uw").matches(Cmp::Ge, set("wub")));
+    assert!(!spec("uw").matches(Cmp::Ge, set("w")));
+    assert!(spec("uw").matches(Cmp::Ge, set("wub")) == set("wub").compare(Cmp::Ge, set("uw")));
+
+    // Colorless means exactly colorless, even with `:`.
+    assert!(spec("c").matches_colon(ColorKind::Color, ColorSet::COLORLESS));
+    assert!(!spec("c").matches_colon(ColorKind::Color, set("r")));
+    assert!(spec("c").matches_colon(ColorKind::Identity, ColorSet::COLORLESS));
+
+    // Counts: `c=2`, `c>=3`.
+    assert!(spec("2").matches(Cmp::Eq, set("wu")));
+    assert!(!spec("2").matches(Cmp::Eq, set("w")));
+    assert!(spec("2").matches(Cmp::Lt, set("w")));
+    assert!(spec("0").matches_colon(ColorKind::Color, ColorSet::COLORLESS));
+
+    // Multicolor.
+    assert!(spec("m").matches_colon(ColorKind::Color, set("wu")));
+    assert!(spec("multicolor").matches(Cmp::Ne, set("w")));
+    assert!(!spec("m").matches_colon(ColorKind::Color, set("w")));
+
+    assert!(matches!(
+        ColorSpec::parse("6"),
+        Err(ParseError::InvalidColorCount(_))
+    ));
+    assert!(ColorSpec::parse("purple").is_err());
 }
