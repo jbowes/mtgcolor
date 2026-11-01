@@ -39,3 +39,8 @@ pub use cmp::Cmp;
 pub use color::{Color, ColorSet, Iter as ColorSetIter};
 pub use error::{DecodeError, ParseError};
 pub use query::{ColorKind, ColorSpec};
+
+/// Compiles and runs the README's example as a doctest.
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+struct ReadmeDoctests;
