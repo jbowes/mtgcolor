@@ -3,6 +3,8 @@
 //! - [`Color`] and [`ColorSet`]: the five colors and the 32 combinations of them, with set
 //!   algebra, containment comparison and Scryfall's color names (`azorius`, `bant`, `chaos`).
 //! - [`Cmp`]: Scryfall's comparison operators, which on colors mean containment.
+//! - [`ColorSpec`] and [`ColorKind`]: the value half of Scryfall's `c:` and `id:` keywords, for
+//!   building a query engine on top.
 //! - A one-byte binary encoding for a [`ColorSet`].
 //!
 //! ```
@@ -31,7 +33,9 @@ extern crate alloc;
 mod cmp;
 mod color;
 mod error;
+mod query;
 
 pub use cmp::Cmp;
 pub use color::{Color, ColorSet, Iter as ColorSetIter};
 pub use error::{DecodeError, ParseError};
+pub use query::{ColorKind, ColorSpec};

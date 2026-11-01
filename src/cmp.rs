@@ -24,7 +24,7 @@ pub enum Cmp {
 
 impl Cmp {
     /// Parses `=`, `==`, `!=`, `<`, `<=`, `>`, `>=`. Scryfall's `:` is context dependent and is
-    /// not handled here.
+    /// not handled here; see [`ColorSpec::matches_colon`](crate::ColorSpec::matches_colon).
     #[must_use]
     pub fn parse(op: &str) -> Option<Self> {
         match op {
