@@ -1,0 +1,21 @@
+[package]
+name = "mtgcolor"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.88"
+description = "Magic: The Gathering colors, color identity, mana pips and mana costs: parse Scryfall/Oracle syntax, compare, and encode compactly"
+license = "MIT OR Apache-2.0"
+keywords = ["mtg", "magic-the-gathering", "scryfall", "mana"]
+categories = ["parser-implementations", "no-std"]
+
+[features]
+default = []
+# `Serialize`/`Deserialize` using Scryfall's string forms ("W", ["W", "U"], "{2}{W}").
+serde = ["dep:serde"]
+
+[dependencies]
+serde = { version = "1", optional = true, default-features = false, features = ["alloc"] }
+
+[dev-dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
